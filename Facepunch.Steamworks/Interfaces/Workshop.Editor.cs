@@ -20,6 +20,8 @@ namespace Facepunch.Steamworks
             public string Folder { get; set; } = null;
             public string PreviewImage { get; set; } = null;
             public List<string> Tags { get; set; } = new List<string>();
+            public List<string> Images { get; set; } = new List<string>();
+            public List<string> Videos { get; set; } = new List<string>();
             public bool Publishing { get; internal set; }
             public ItemType? Type { get; set; }
             public string Error { get; internal set; } = null;
@@ -90,16 +92,6 @@ namespace Facepunch.Steamworks
                 }
             }
 
-            public void AddPreviewImage(string file)
-            {
-                workshop.steamworks.native.ugc.AddItemPreviewFile(UpdateHandle, file, ItemPreviewType.Image);
-            }
-
-            public void AddPreviewVideo(string video)
-            {
-                workshop.steamworks.native.ugc.AddItemPreviewVideo(UpdateHandle, video);
-            }
-
             public void Publish()
             {
                 Publishing = true;
@@ -163,6 +155,16 @@ namespace Facepunch.Steamworks
 
                 if ( Visibility.HasValue )
                     workshop.ugc.SetItemVisibility( UpdateHandle, (SteamNative.RemoteStoragePublishedFileVisibility)(uint)Visibility.Value );
+
+                for (int i = 0; i < Images.Count; i++)
+                {
+                    workshop.ugc.AddItemPreviewFile(UpdateHandle, Images[i], ItemPreviewType.Image);
+                }
+
+                for (int i = 0; i < Videos.Count; i++)
+                {
+                    workshop.ugc.AddItemPreviewVideo(UpdateHandle, Videos[i]);
+                }
 
                 if ( PreviewImage != null )
                 {

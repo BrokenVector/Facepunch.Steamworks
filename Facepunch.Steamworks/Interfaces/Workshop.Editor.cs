@@ -90,6 +90,16 @@ namespace Facepunch.Steamworks
                 }
             }
 
+            public void AddPreviewImage(string file)
+            {
+                workshop.steamworks.native.ugc.AddItemPreviewFile(UpdateHandle, file, ItemPreviewType.Image);
+            }
+
+            public void AddPreviewVideo(string video)
+            {
+                workshop.steamworks.native.ugc.AddItemPreviewVideo(UpdateHandle, video);
+            }
+
             public void Publish()
             {
                 Publishing = true;

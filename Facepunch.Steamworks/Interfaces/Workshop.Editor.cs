@@ -116,6 +116,7 @@ namespace Facepunch.Steamworks
             {
                 NeedToAgreeToWorkshopLegal = obj.UserNeedsToAcceptWorkshopLegalAgreement;
                 CreateItem.Dispose();
+                CreateItem = null;
 
                 if ( obj.Result == SteamNative.Result.OK && !Failed )
                 {

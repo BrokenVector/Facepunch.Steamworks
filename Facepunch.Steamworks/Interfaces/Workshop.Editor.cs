@@ -26,6 +26,7 @@ namespace Facepunch.Steamworks
             public ItemType? Type { get; set; }
             public string Error { get; internal set; } = null;
             public string ChangeNote { get; set; } = "";
+            public uint WorkshopUploadAppId { get; set; }
 
             public enum VisibilityType : int
             {
@@ -44,56 +45,54 @@ namespace Facepunch.Steamworks
             {
                 get
                 {
-                    if ( !Publishing ) return 1.0;
-                    if ( CreateItem != null ) return 0.0;
-                    if ( SubmitItemUpdate == null ) return 1.0;
+                    var bt = BytesTotal;
+                    if (bt == 0) return 0;
 
-                    ulong b = 0;
-                    ulong t = 0;
-
-                    workshop.steamworks.native.ugc.GetItemUpdateProgress( UpdateHandle, out b, out t );
-
-                    if ( t == 0 )
-                        return 0;
-
-                    return (double)b / (double) t;
+                    return (double)BytesUploaded / (double)bt;
                 }
             }
+
+            private int bytesUploaded = 0;
 
             public int BytesUploaded
             {
                 get
                 {
-                    if ( !Publishing ) return 0;
-                    if ( CreateItem != null ) return 0;
-                    if ( SubmitItemUpdate == null ) return 0;
+                    if ( !Publishing ) return bytesUploaded;
+                    if (UpdateHandle == 0) return bytesUploaded;
 
                     ulong b = 0;
                     ulong t = 0;
 
                     workshop.steamworks.native.ugc.GetItemUpdateProgress( UpdateHandle, out b, out t );
-                    return (int) b;
+                    bytesUploaded = Math.Max( bytesUploaded, (int) b );
+                    return (int)bytesUploaded;
                 }
             }
+
+            private int bytesTotal = 0;
 
             public int BytesTotal
             {
                 get
                 {
-                    if ( !Publishing ) return 0;
-                    if ( CreateItem != null ) return 0;
-                    if ( SubmitItemUpdate == null ) return 0;
+                    if ( !Publishing ) return bytesTotal;
+                    if (UpdateHandle == 0 ) return bytesTotal;
 
                     ulong b = 0;
                     ulong t = 0;
 
                     workshop.steamworks.native.ugc.GetItemUpdateProgress( UpdateHandle, out b, out t );
-                    return (int)t;
+                    bytesTotal = Math.Max(bytesTotal, (int)t);
+                    return (int)bytesTotal;
                 }
             }
 
             public void Publish()
             {
+                bytesUploaded = 0;
+                bytesTotal = 0;
+
                 Publishing = true;
                 Error = null;
 
@@ -111,7 +110,7 @@ namespace Facepunch.Steamworks
                 if ( !Type.HasValue )
                     throw new System.Exception( "Editor.Type must be set when creating a new item!" );
 
-                CreateItem = workshop.ugc.CreateItem( workshop.steamworks.AppId, (SteamNative.WorkshopFileType)(uint)Type, OnItemCreated );
+                CreateItem = workshop.ugc.CreateItem( WorkshopUploadAppId, (SteamNative.WorkshopFileType)(uint)Type, OnItemCreated );
             }
 
             private void OnItemCreated( SteamNative.CreateItemResult_t obj, bool Failed )
@@ -133,7 +132,7 @@ namespace Facepunch.Steamworks
 
             private void PublishChanges()
             {
-                UpdateHandle = workshop.ugc.StartItemUpdate( workshop.steamworks.AppId, Id );
+                UpdateHandle = workshop.ugc.StartItemUpdate(WorkshopUploadAppId, Id );
 
                 if ( Title != null )
                     workshop.ugc.SetItemTitle( UpdateHandle, Title );
@@ -200,6 +199,7 @@ namespace Facepunch.Steamworks
                 if ( Failed )
                     throw new System.Exception( "CreateItemResult_t Failed" );
 
+                UpdateHandle = 0;
                 SubmitItemUpdate = null;
                 NeedToAgreeToWorkshopLegal = obj.UserNeedsToAcceptWorkshopLegalAgreement;
                 Publishing = false;

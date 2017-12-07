@@ -55,6 +55,7 @@ namespace Facepunch.Steamworks
 
         public Voice Voice { get; private set; }
         public ServerList ServerList { get; private set; }
+        public LobbyList LobbyList { get; private set; }
         public App App { get; private set; }
         public Achievements Achievements { get; private set; }
         public Stats Stats { get; private set; }
@@ -64,6 +65,11 @@ namespace Facepunch.Steamworks
 
         public Client( uint appId )
         {
+            if ( Instance != null )
+            {
+                throw new System.Exception( "Only one Facepunch.Steamworks.Client can exist - dispose the old one before trying to create a new one." );
+            }
+
             Instance = this;
             native = new Interop.NativeInterface();
 
@@ -88,6 +94,7 @@ namespace Facepunch.Steamworks
             //
             Voice = new Voice( this );
             ServerList = new ServerList( this );
+            LobbyList = new LobbyList(this);
             App = new App( this );
             Stats = new Stats( this );
             Achievements = new Achievements( this );
@@ -107,7 +114,9 @@ namespace Facepunch.Steamworks
             SteamId = native.user.GetSteamID();
             BetaName = native.apps.GetCurrentBetaName();
             OwnerSteamId = native.apps.GetAppOwner();
-            InstallFolder = new DirectoryInfo( native.apps.GetAppInstallDir( AppId ) );
+            var appInstallDir = native.apps.GetAppInstallDir(AppId);
+            if (!String.IsNullOrEmpty(appInstallDir) && Directory.Exists(appInstallDir))
+                InstallFolder = new DirectoryInfo(appInstallDir);
             BuildId = native.apps.GetAppBuildId();
             CurrentLanguage = native.apps.GetCurrentGameLanguage();
             AvailableLanguages = native.apps.GetAvailableGameLanguages().Split( new[] {';'}, StringSplitOptions.RemoveEmptyEntries ); // TODO: Assumed colon separated
@@ -149,7 +158,6 @@ namespace Facepunch.Steamworks
         {
             if ( Voice != null )
             {
-                Voice.Dispose();
                 Voice = null;
             }
 
@@ -157,6 +165,12 @@ namespace Facepunch.Steamworks
             {
                 ServerList.Dispose();
                 ServerList = null;
+            }
+
+            if (LobbyList != null)
+            {
+                LobbyList.Dispose();
+                LobbyList = null;
             }
 
             if ( App != null )
